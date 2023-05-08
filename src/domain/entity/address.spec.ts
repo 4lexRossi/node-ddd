@@ -15,7 +15,7 @@ describe('Address unit tests', () => {
       const customer = new Customer('1', 'Customer 1');
       const address = new Address('rua um', 123, '', 'Piracity');
       customer.Address = address;
-    }).toThrowError('Zip code is required')
+    }).toThrowError('Zip is required')
   });
 
   it('should throw error City is required', () => {
@@ -32,6 +32,6 @@ describe('Address unit tests', () => {
     customer.Address = address;
 
     const addressToString = address.toString()
-    expect(addressToString).toBe('rua um, 123, 32142-867/Piracity')
+    expect(addressToString).toBe('rua um, 123, 32142-867 Piracity')
   });
 })
