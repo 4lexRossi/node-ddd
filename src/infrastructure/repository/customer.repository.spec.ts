@@ -1,12 +1,9 @@
 import { Sequelize } from "sequelize-typescript"
-import Product from "../../domain/entity/product";
-import ProductRepository from "./product.repository";
 import CustomerModel from "../db/sequelize/model/customer.model";
 import CustomerRepository from "./customer.repository";
 import Customer from "../../domain/entity/customer";
 import Address from "../../domain/entity/address";
-
-describe('Product repository test', () => {
+describe("Customer repository test", () => {
   let sequelize: Sequelize;
 
   beforeEach(async () => {
@@ -16,7 +13,8 @@ describe('Product repository test', () => {
       logging: false,
       sync: { force: true },
     });
-    sequelize.addModels([CustomerModel]);
+
+    await sequelize.addModels([CustomerModel]);
     await sequelize.sync();
   });
 
@@ -24,84 +22,90 @@ describe('Product repository test', () => {
     await sequelize.close();
   });
 
-  it('should create a customer', async() => {
+  it("should create a customer", async () => {
     const customerRepository = new CustomerRepository();
-    const customer = new Customer('123', 'Customer 1');
-    const address = new Address('Stret 1', 1, 'Zipcode 1', 'City 1');
+    const customer = new Customer("123", "Customer 1");
+    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
     customer.Address = address;
     await customerRepository.create(customer);
 
-    const customerModel = await CustomerModel.findOne({where: {id: "123"}});
+    const customerModel = await CustomerModel.findOne({ where: { id: "123" } });
 
     expect(customerModel.toJSON()).toStrictEqual({
-      id: '123',
+      id: "123",
       name: customer.name,
       active: customer.isActive(),
-      rewardPoinst: customer.rewardPoints,
+      rewardPoints: customer.rewardPoints,
       street: address.street,
       number: address.number,
-      zip: address.zip,
+      zipcode: address.zip,
       city: address.city,
     });
   });
 
-  // it('should update a product', async() => {
-  //   const productRepository = new ProductRepository();
-  //   const product = new Product('1', 'Product 1', 100);
+  it("should update a customer", async () => {
+    const customerRepository = new CustomerRepository();
+    const customer = new Customer("123", "Customer 1");
+    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    customer.Address = address;
+    await customerRepository.create(customer);
 
-  //   await productRepository.create(product);
+    customer.changeName("Customer 2");
+    await customerRepository.update(customer);
+    const customerModel = await CustomerModel.findOne({ where: { id: "123" } });
 
-  //   const productModel = await ProductModel.findOne({where: {id: "1"}});
+    expect(customerModel.toJSON()).toStrictEqual({
+      id: "123",
+      name: customer.name,
+      active: customer.isActive(),
+      rewardPoints: customer.rewardPoints,
+      street: address.street,
+      number: address.number,
+      zipcode: address.zip,
+      city: address.city,
+    });
+  });
 
-  //   expect(productModel.toJSON()).toStrictEqual({
-  //     id: '1',
-  //     name: 'Product 1',
-  //     price: 100
-  //   });
+  it("should find a customer", async () => {
+    const customerRepository = new CustomerRepository();
+    const customer = new Customer("123", "Customer 1");
+    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    customer.Address = address;
+    await customerRepository.create(customer);
 
-  //   product.changeName('Product 2');
-  //   product.changePrice(200);
+    const customerResult = await customerRepository.find(customer.id);
 
-  //   await productRepository.update(product);
+    expect(customer).toStrictEqual(customerResult);
+  });
 
-  //   const productModel2 = await ProductModel.findOne({ where: {id: '1'}});
+  it("should throw an error when customer is not found", async () => {
+    const customerRepository = new CustomerRepository();
 
-  //   expect(productModel2.toJSON()).toStrictEqual({
-  //     id: '1',
-  //     name: 'Product 2',
-  //     price: 200
-  //   });
-  // });
+    expect(async () => {
+      await customerRepository.find("456ABC");
+    }).rejects.toThrow("Customer not found");
+  });
 
-  // it('should find a product', async() => {
-  //   const productRepository = new ProductRepository();
-  //   const product = new Product('1', 'Product 1', 100);
+  it("should find all customers", async () => {
+    const customerRepository = new CustomerRepository();
+    const customer1 = new Customer("123", "Customer 1");
+    const address1 = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    customer1.Address = address1;
+    customer1.addRewardPoints(10);
+    customer1.activate();
 
-  //   await productRepository.create(product);
+    const customer2 = new Customer("456", "Customer 2");
+    const address2 = new Address("Street 2", 2, "Zipcode 2", "City 2");
+    customer2.Address = address2;
+    customer2.addRewardPoints(20);
 
-  //   const productModel = await ProductModel.findOne({where: {id: "1"}});
+    await customerRepository.create(customer1);
+    await customerRepository.create(customer2);
 
-  //   const foundProduct = await productRepository.find('1');
+    const customers = await customerRepository.findAll();
 
-  //   expect(productModel.toJSON()).toStrictEqual({
-  //     id: foundProduct.id,
-  //     name: foundProduct.name,
-  //     price: foundProduct.price
-  //   });
-  // });
-
-  // it('should find all products', async() => {
-  //   const productRepository = new ProductRepository();
-  //   const product1 = new Product('1', 'Product 1', 100);
-  //   await productRepository.create(product1);
-
-  //   const product2 = new Product('2', 'Product 2', 200);
-  //   await productRepository.create(product2);
-
-  //   const foundProducts = await productRepository.findAll();
-
-  //   const products = [product1, product2]
-
-  //   expect(products).toEqual(foundProducts);
-  // });
+    expect(customers).toHaveLength(2);
+    expect(customers).toContainEqual(customer1);
+    expect(customers).toContainEqual(customer2);
+  });
 });
